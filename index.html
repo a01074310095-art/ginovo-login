@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 처리 중...</title>
+</head>
+<body>
+    <h3>앱으로 돌아가는 중입니다...</h3>
+    <script>
+        // 네이버가 뒤에 붙여준 토큰(#access_token=...)을 가져옴
+        var hash = window.location.hash; 
+
+        // 앱의 딥링크 스킴으로 변경 (ginovo-unity)
+        var deepLink = "ginovo-unity://naver_callback" + hash;
+
+        // 앱 실행
+        window.location.href = deepLink;
+        
+        // (선택 사항) PC에서 테스트할 때를 위해 3초 뒤 창 닫기 시도
+        setTimeout(function() {
+            window.close();
+        }, 3000);
+    </script>
+</body>
+</html>
