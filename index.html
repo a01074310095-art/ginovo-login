@@ -3,53 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Redirect</title>
+    <title>로그인 연결 중...</title>
 </head>
 <body>
-    <h3 id="status">로그인 처리 중...</h3>
-    <p id="debug" style="font-size:12px; color:gray;"></p>
-    <a id="manual-link" href="#" style="font-size: 16px; padding: 10px; background: #eee; display:none;">앱으로 돌아가기</a>
+    <h3>앱으로 돌아가는 중입니다...</h3>
+    <p>자동으로 이동하지 않으면 아래 버튼을 눌러주세요.</p>
+    <button onclick="goApp()" style="padding:15px; font-size:16px;">앱으로 돌아가기</button>
 
     <script>
-        var query = window.location.search; // ?code=...
-        var hash = window.location.hash;    // #access_token=...
+        function goApp() {
+            // 1. URL 정보 가져오기
+            var hash = window.location.hash;     // 네이버용 (#access_token=...)
+            var search = window.location.search; // 라인용 (?code=...)
 
-        var scheme = "ginovo-unity://";
-        var path = "";
-        var finalUrl = "";
+            var finalUrl = "";
 
-        // 디버깅용 출력
-        document.getElementById("debug").innerText = "Query: " + query + "\nHash: " + hash;
+            // 2. 판단 로직 (단순화)
+            // 물음표(?) 뒤에 code= 가 있으면 -> 라인이다.
+            if (search.includes("code=")) {
+                // 라인: ginovo-unity://line_callback?code=...
+                finalUrl = "ginovo-unity://line_callback" + search;
+            } 
+            // 그 외에는 전부 -> 네이버라고 가정한다. (기존 로직 유지)
+            else {
+                // 네이버: ginovo-unity://naver_callback#access_token=...
+                // (기존에 잘 되던 코드 방식 그대로입니다)
+                finalUrl = "ginovo-unity://naver_callback" + hash;
+            }
 
-        // 1. 라인 (쿼리에 code가 있음)
-        if (query.includes("code=")) {
-            path = "line_callback";
-            finalUrl = scheme + path + query; // 라인은 ?code=... 그대로 붙임
+            // 3. 앱 실행
+            window.location.href = finalUrl;
         }
-        // 2. 네이버 (해시에 access_token이 있음)
-        else if (hash.includes("access_token=")) {
-            path = "naver_callback";
-            finalUrl = scheme + path + hash; 
-        }
-        // 3. 그 외 (에러 등)
-        else {
-            document.getElementById("status").innerText = "로그인 정보를 찾을 수 없습니다.";
-        }
 
-        if (finalUrl !== "") {
-            document.getElementById("debug").innerText += "\nTarget: " + finalUrl;
-            
-            // 링크 버튼에도 주소 심어주기 (자동실행 실패 대비)
-            var btn = document.getElementById("manual-link");
-            btn.href = finalUrl;
-            btn.style.display = "block";
-            btn.innerText = "앱이 열리지 않으면 클릭하세요";
-
-            // 0.5초 뒤 자동 이동
-            setTimeout(function() {
-                window.location.href = finalUrl;
-            }, 500);
-        }
+        // 페이지 로딩 즉시 실행
+        goApp();
     </script>
 </body>
 </html>
