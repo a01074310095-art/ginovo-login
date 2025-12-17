@@ -8,19 +8,36 @@
 <body>
     <h3>앱으로 돌아가는 중입니다...</h3>
     <script>
-        // 네이버가 뒤에 붙여준 토큰(#access_token=...)을 가져옴
-        var hash = window.location.hash; 
+        // 1. 현재 URL의 파라미터 가져오기
+        var query = window.location.search; // ?code=abc... (쿼리 스트링)
+        var hash = window.location.hash;    // #access_token=xyz... (해시)
 
-        // 앱의 딥링크 스킴으로 변경 (ginovo-unity)
-        var deepLink = "ginovo-unity://naver_callback" + hash;
+        // 2. Unity로 보낼 기본 스킴 헤더
+        var schemePrefix = "ginovo-unity://";
+        var targetPath = "";
 
-        // 앱 실행
-        window.location.href = deepLink;
-        
-        // (선택 사항) PC에서 테스트할 때를 위해 3초 뒤 창 닫기 시도
+        // 3. [핵심 로직] 파라미터로 누구인지 판별
+        // Line은 Authorization Code 방식이라 'code=' 가 쿼리 스트링에 포함됨
+        if (query.includes("code=")) {
+            targetPath = "line_callback";
+        }
+        // Naver는 Implicit 방식이라 'access_token=' 이 해시(#)에 포함됨
+        // (또는 에러 상황일 때도 기본적으로 Naver로 처리하거나 추가 분기 가능)
+        else {
+            targetPath = "naver_callback";
+        }
+
+        // 4. 최종 URL 조합 (기존 파라미터 유실 없이 몽땅 붙여서 보냄)
+        // 예: ginovo-unity://line_callback?code=...&state=...
+        var finalUrl = schemePrefix + targetPath + query + hash;
+
+        // 디버깅용 메시지 (PC 브라우저에서 확인용)
+        document.getElementById("debug-msg").innerText = "Redirecting to: " + targetPath;
+
+        // 5. Unity 앱으로 리다이렉트
         setTimeout(function() {
-            window.close();
-        }, 3000);
+            window.location.href = finalUrl;
+        }, 100); // 0.1초 뒤 실행 (브라우저 처리 안정성 확보)
     </script>
 </body>
 </html>
