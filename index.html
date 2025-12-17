@@ -3,40 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로그인 연결 중...</title>
+    <title>로그인 처리 중...</title>
 </head>
 <body>
     <h3>앱으로 돌아가는 중입니다...</h3>
-    <p>자동으로 이동하지 않으면 아래 버튼을 눌러주세요.</p>
-    <button onclick="goApp()" style="padding:15px; font-size:16px;">앱으로 돌아가기</button>
-
     <script>
-        function goApp() {
-            // 1. URL 정보 가져오기
-            var hash = window.location.hash;     // 네이버용 (#access_token=...)
-            var search = window.location.search; // 라인용 (?code=...)
+        // 네이버가 뒤에 붙여준 토큰(#access_token=...)을 가져옴
+        var hash = window.location.hash; 
 
-            var finalUrl = "";
+        // 앱의 딥링크 스킴으로 변경 (ginovo-unity)
+        var deepLink = "ginovo-unity://naver_callback" + hash;
 
-            // 2. 판단 로직 (단순화)
-            // 물음표(?) 뒤에 code= 가 있으면 -> 라인이다.
-            if (search.includes("code=")) {
-                // 라인: ginovo-unity://line_callback?code=...
-                finalUrl = "ginovo-unity://line_callback" + search;
-            } 
-            // 그 외에는 전부 -> 네이버라고 가정한다. (기존 로직 유지)
-            else {
-                // 네이버: ginovo-unity://naver_callback#access_token=...
-                // (기존에 잘 되던 코드 방식 그대로입니다)
-                finalUrl = "ginovo-unity://naver_callback" + hash;
-            }
-
-            // 3. 앱 실행
-            window.location.href = finalUrl;
-        }
-
-        // 페이지 로딩 즉시 실행
-        goApp();
+        // 앱 실행
+        window.location.href = deepLink;
+        
+        // (선택 사항) PC에서 테스트할 때를 위해 3초 뒤 창 닫기 시도
+        setTimeout(function() {
+            window.close();
+        }, 3000);
     </script>
 </body>
 </html>
