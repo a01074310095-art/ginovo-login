@@ -1,43 +1,68 @@
+네이버 딥링크가 안 된다면 90%의 확률로 "HTML 브릿지 페이지"에서 주소 조합이 잘못되었거나, "안드로이드 매니페스트(설정)" 문제입니다.
+
+방금 수정한 HTML 로직을 다시 점검하고, 가장 확실한 해결책 3단계를 알려드립니다.
+
+1. HTML 브릿지 코드 재점검 (가장 유력)
+네이버는 데이터(토큰)를 **? (Query)**가 아니라 # (Hash) 뒤에 붙여서 보냅니다. 방금 수정한 코드에서 hash 값을 제대로 못 가져오거나, 조합이 이상하게 되었을 수 있습니다.
+
+아래 코드로 index.html을 다시 한번 덮어씌워 보세요. (네이버 감지 로직을 더 명확하게 바꿨습니다.)
+
+HTML
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로그인 처리 중...</title>
+    <title>Login Redirect</title>
 </head>
 <body>
-    <h3>앱으로 돌아가는 중입니다...</h3>
+    <h3 id="status">로그인 처리 중...</h3>
+    <p id="debug" style="font-size:12px; color:gray;"></p>
+    <a id="manual-link" href="#" style="font-size: 16px; padding: 10px; background: #eee; display:none;">앱으로 돌아가기</a>
+
     <script>
-        // 1. 현재 URL의 파라미터 가져오기
-        var query = window.location.search; // ?code=abc... (쿼리 스트링)
-        var hash = window.location.hash;    // #access_token=xyz... (해시)
+        var query = window.location.search; // ?code=...
+        var hash = window.location.hash;    // #access_token=...
 
-        // 2. Unity로 보낼 기본 스킴 헤더
-        var schemePrefix = "ginovo-unity://";
-        var targetPath = "";
+        var scheme = "ginovo-unity://";
+        var path = "";
+        var finalUrl = "";
 
-        // 3. [핵심 로직] 파라미터로 누구인지 판별
-        // Line은 Authorization Code 방식이라 'code=' 가 쿼리 스트링에 포함됨
+        // 디버깅용 출력
+        document.getElementById("debug").innerText = "Query: " + query + "\nHash: " + hash;
+
+        // 1. 라인 (쿼리에 code가 있음)
         if (query.includes("code=")) {
-            targetPath = "line_callback";
+            path = "line_callback";
+            finalUrl = scheme + path + query; // 라인은 ?code=... 그대로 붙임
         }
-        // Naver는 Implicit 방식이라 'access_token=' 이 해시(#)에 포함됨
-        // (또는 에러 상황일 때도 기본적으로 Naver로 처리하거나 추가 분기 가능)
+        // 2. 네이버 (해시에 access_token이 있음)
+        else if (hash.includes("access_token=")) {
+            path = "naver_callback";
+            // 네이버는 해시(#)를 쿼리(?)처럼 바꿔서 유니티가 파싱하기 쉽게 만들어주면 좋습니다.
+            // 하지만 유니티 코드가 이미 # 파싱을 하고 있다면 그대로 hash를 붙입니다.
+            finalUrl = scheme + path + hash; 
+        }
+        // 3. 그 외 (에러 등)
         else {
-            targetPath = "naver_callback";
+            document.getElementById("status").innerText = "로그인 정보를 찾을 수 없습니다.";
         }
 
-        // 4. 최종 URL 조합 (기존 파라미터 유실 없이 몽땅 붙여서 보냄)
-        // 예: ginovo-unity://line_callback?code=...&state=...
-        var finalUrl = schemePrefix + targetPath + query + hash;
+        if (finalUrl !== "") {
+            document.getElementById("debug").innerText += "\nTarget: " + finalUrl;
+            
+            // 링크 버튼에도 주소 심어주기 (자동실행 실패 대비)
+            var btn = document.getElementById("manual-link");
+            btn.href = finalUrl;
+            btn.style.display = "block";
+            btn.innerText = "앱이 열리지 않으면 클릭하세요";
 
-        // 디버깅용 메시지 (PC 브라우저에서 확인용)
-        document.getElementById("debug-msg").innerText = "Redirecting to: " + targetPath;
-
-        // 5. Unity 앱으로 리다이렉트
-        setTimeout(function() {
-            window.location.href = finalUrl;
-        }, 100); // 0.1초 뒤 실행 (브라우저 처리 안정성 확보)
+            // 0.5초 뒤 자동 이동
+            setTimeout(function() {
+                window.location.href = finalUrl;
+            }, 500);
+        }
     </script>
 </body>
 </html>
